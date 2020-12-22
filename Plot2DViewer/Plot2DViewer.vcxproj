@@ -82,7 +82,7 @@
     <ClInclude Include="Model2D.h" />
     <ClInclude Include="Model3D.h" />
     <ClInclude Include="ParametricFuntion.h" />
-    <ClInclude Include="Scene2D.h" />
+    <ClInclude Include="Scene3D.h" />
     <ClInclude Include="Utils.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

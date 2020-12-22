@@ -1,15 +1,15 @@
-
 #include <windows.h>
 #include <windowsx.h>
 #include "Data.h"
-#include "Scene2D.h"
+#include "Scene3D.h"
 #include "Model2D.h"
 #include "EllyipticCoordinates.h"
 #include "ParametricFuntion.h"
 #include"Utils.h"
+#include"Coordinates.h"
 
 
-EllipticFunction *ellyptic = new EllipticFunction(5);
+//EllipticFunction *ellyptic = new EllipticFunction(5);
 
 
 LRESULT _stdcall WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);						// �������� ������� ���������
@@ -28,23 +28,23 @@ int _stdcall WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 	wc.lpszMenuName = 0;							// ���� � ������� ������ �����������
 	wc.lpszClassName = (LPCSTR)"MainWindowClass";	// ��� �������� ������, ������������ ��� �������� ����������� ����
 	RegisterClass(&wc);								// ����������� ������ wc
-	
-	ellyptic->setFunctions(parametricSpiralX, parametricSpiralY);
-	ellyptic->setBorders(0, 12*M_PI);
+
+	//ellyptic->setFunctions(parametricSpiralX, parametricSpiralY);
+	//ellyptic->setBorders(0, 12 * M_PI);
 
 	HWND hWnd = CreateWindow(						// hWnd - ����������, ���������������� ����; ������� �������� ���� ��������� ���������� hWnd ��������� ���������
 		(LPCSTR)"MainWindowClass",					// ��� �������� ������
 		(LPCSTR)"Plot2D Viewer",					// ��������� ����
 		WS_OVERLAPPEDWINDOW,						// ����� ����
-		200,200,400,400,							// ���������� �� ������ ������ �������� ���� ����, ��� ������ � ������
-		nullptr,nullptr,hInstance,nullptr);
+		200, 200, 400, 400,							// ���������� �� ������ ������ �������� ���� ����, ��� ������ � ������
+		nullptr, nullptr, hInstance, nullptr);
 
-	ShowWindow(hWnd,nCmdShow);
+	ShowWindow(hWnd, nCmdShow);
 	UpdateWindow(hWnd);
 
 	// ������ ������������ ����� �������� ��������� - �������� ���� ��������� ��������� ���������, ������� ������� ��������� � ��������� �� ��������������� �����
 	MSG msg;
-	while(GetMessage(&msg,nullptr,0,0))				// ������� GetMessage �������� �� ������� ��������� � ������� ��� � ��������� msg
+	while (GetMessage(&msg, nullptr, 0, 0))				// ������� GetMessage �������� �� ������� ��������� � ������� ��� � ��������� msg
 	{
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);						// ������� DispatchMessage ��������� ������� � ������������� ������ ������� ���������
@@ -53,26 +53,24 @@ int _stdcall WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 	return 0;
 }
 
-// � �������� ������ ����������� ������ ���� ���������� ���������� - �������� ������ ������ Scene2D
-// ��� ���������� �������� �������������� ����������� ��������� � �������, ������������� � ���� ������
-
-Scene2D scene(L,R,B,T);
-Model2D model;
+Scene3D scene(L, R, B, T);
+Model3D model("faces.txt","vertices.txt");
+//Model2D model;
 
 LRESULT _stdcall WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)		// ������� ��������� ��������� � ������������ ��� ���������, ������������ ����
 {
-	switch(msg)
+	switch (msg)
 	{
 	case WM_PAINT:
-		{
-			HDC dc = GetDC(hWnd);
-			scene.Clear(dc);// ����� �������������� � ������ Camera2D ������, ����������� �� ������� ������� ������� ���� hWnd
-			SetBkColor(dc, 0x00FFFFFF);
-			//scene.Plot(dc, ellyptic);		// ����� �������������� � ������ Scene2D ������, ����������� �� ��������� ������� ���������
-			scene.renderModel(dc, model);
-			ReleaseDC(hWnd,dc);
-			return DefWindowProc(hWnd,msg,wParam,lParam);
-		}
+	{
+		HDC dc = GetDC(hWnd);
+		scene.Clear(dc);// ����� �������������� � ������ Camera2D ������, ����������� �� ������� ������� ������� ���� hWnd
+		SetBkColor(dc, 0x00FFFFFF);
+		//scene.Plot(dc, ellyptic);		// ����� �������������� � ������ Scene2D ������, ����������� �� ��������� ������� ���������
+		scene.render(dc, model);
+		ReleaseDC(hWnd, dc);
+		return DefWindowProc(hWnd, msg, wParam, lParam);
+	}
 	case WM_KEYDOWN:
 	{
 		switch (wParam)
@@ -85,50 +83,66 @@ LRESULT _stdcall WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)		// 
 		//A
 		case 0x41:
 		{
-			double x = model.getPrismCenterX();
-			double y = model.getPrismCenterY();
-			model.apply(RotationCenter(2, x, y));
-			model.apply();
+			auto n = scene.getN();
+			auto t = scene.getT();
+			scene.setN(SpinAroundPoint(n,t,M_PI/30));
+			//model.Apply(RotationSecond(model.GetVertexX(0), model.GetVertexY(0), model.GetVertexZ(0),
+			//							model.GetVertexX(2), model.GetVertexY(2), model.GetVertexZ(2), M_PI/60));
+			//model.Apply();
 			break;
 		}
 		//D
 		case 0x44:
 		{
-			double x = model.getPrismCenterX();
-			double y = model.getPrismCenterY();
-			model.apply(RotationCenter(-2, x, y));
-			model.apply();
+			auto n = scene.getN();
+			auto t = scene.getT();
+			scene.setN(SpinAroundPoint(n,t, -M_PI / 30));
+			//model.Apply(RotationSecond(model.GetVertexX(0), model.GetVertexY(0), model.GetVertexZ(0),
+			//	model.GetVertexX(2), model.GetVertexY(2), model.GetVertexZ(2),-M_PI / 60));
+			//model.Apply();
 			break;
 		}
 		//B
 		case 0x42:
-			model.apply(Translation(1,1));
-			model.apply();
-			break;
-		//C
-		case 0x43: {
-			double *abc = findABC(
-				model.getVertices().getCell(0, 0), model.getVertices().getCell(1, 0),
-				model.getVertices().getCell(0, 2), model.getVertices().getCell(1, 2)
-			);
-			model.apply(MappingLine(abc[0], abc[1], abc[2]));
-			model.apply();
+		{
+			
+			//scene.setN(SpinAroundPointX(scene.getN(), scene.getT(), 3));
+		//	auto v = findVectForOnePointAndOX(Coordinates(2, 2, 0));
+			//model.Apply(RotationFirst(model.GetVertexY(1), model.GetVertexZ(1),M_PI/60));
+			model.Apply(Rotation3DZ(M_PI/60));
+			model.Apply();
 			break;
 		}
-		//E
+			//C
+		case 0x43: 
+		{//
+			//auto v = findVectForOnePointAndOX(Coordinates(2, 2, 0));
+			//model.Apply(RotationFirst(model.GetVertexY(1), model.GetVertexZ(1), -M_PI / 60));
+			model.Apply(Rotation3DZ(-M_PI / 60));
+			model.Apply();
+			//scene.setN(SpinAroundPointX(scene.getN(), scene.getT(), -3));
+			//	model.Apply(Rotation3DY(-M_PI / 60));
+			//	model.Apply();
+			break;
+		}
+				   //E
 		case 0x45:
-			model.apply(Scaling(0.9,1.5));
-			model.apply();
+		{
+			model.Apply(Rotation3DX(M_PI / 60));
+			model.Apply();
 			break;
-		//G
+			//G
+		}
 		case 0x47:
-			model.apply(Scaling(1.2, 0.6));
-			model.apply();
+		{
+			model.Apply(Rotation3DX(-M_PI / 60));
+			model.Apply();
 			break;
-		//F
+			//G
+		}
 		case 0x46:
-			model.apply(Mapping0());
-			model.apply();
+			model.Apply(Mapping03D());
+			model.Apply();
 			break;
 		case VK_RIGHT:
 		{
@@ -184,35 +198,28 @@ LRESULT _stdcall WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)		// 
 		return 0;
 	}
 	case WM_SIZE:
-		{
-			HDC dc = GetDC(hWnd);
-			scene.SetResolution(dc);
-			ReleaseDC(hWnd,dc);
-			InvalidateRect(hWnd,nullptr,false);
-			return 0;
-		}
+	{
+		HDC dc = GetDC(hWnd);
+		scene.SetResolution(dc);
+		ReleaseDC(hWnd, dc);
+		InvalidateRect(hWnd, nullptr, false);
+		return 0;
+	}
 
-	case WM_CREATE: 
-		{
-		ifstream f_edg("input_edg.txt");
-		ifstream f_vert("input_vert.txt");
-		if(model.getEdgesFromFile(f_edg)
-			&&
-			model.getVerticesFromFile(f_vert)
-		   )
-			return 0;
-		throw exception("Cant read files");
-		}
+	case WM_CREATE:
+	{
+		return 0;
+	}
 	case WM_DESTROY:
-		{
-			PostQuitMessage(0);
-			return 0;
-		}
+	{
+		PostQuitMessage(0);
+		return 0;
+	}
 
 	default:
-		{
-			return DefWindowProc(hWnd,msg,wParam,lParam);
-		}
+	{
+		return DefWindowProc(hWnd, msg, wParam, lParam);
+	}
 	}
 	return 0;
 }

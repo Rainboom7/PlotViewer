@@ -26,37 +26,38 @@ public:
 	Model3D(string, string); // конструктор создания модели по именам файлов, в которых лежат карта вершин и карта граней;
 	Model3D(int, int);//конструктор с данными M и L
 	void SetEdges(); //создание карты рёбер по заданной карте граней
-	Matrix<> GetVertices();//получение карты вершин, карты граней и карты рёбер;
-	Matrix<int> GetFaces();//получение карты вершин, карты граней и карты рёбер;
-	Matrix<int> GetEdges();//получение карты вершин, карты граней и карты рёбер;
-	double GetVertexX(int);//получение координат вершины модели с заданным номером;
-	double GetVertexY(int); //получение координат вершины модели с заданным номером;
-	double GetVertexZ(int); //получение координат вершины модели с заданным номером;
+	Matrix<> GetVertices()//получение карты вершин, карты граней и карты рёбер;
+	{
+		return this->Vertices;
+	}
+	Matrix<> GetProjectedVertices()
+	{
+		return this->ProjectedVertices;
+	}
+	Matrix<int> GetFaces()//получение карты вершин, карты граней и карты рёбер;
+	{
+		return this->Faces;
+	}
+	Matrix<int> GetEdges() //получение карты вершин, карты граней и карты рёбер;
+	{
+		return this->Edges;
+	}
+	double GetVertexX(int n)//получение координат вершины модели с заданным номером;
+	{
+		return this->Vertices.getCell(0, n) / this->Vertices.getCell(3, n);
+	}
+	double GetVertexY(int n) //получение координат вершины модели с заданным номером;
+	{
+		return this->Vertices.getCell(1, n) / this->Vertices.getCell(3, n);
+	}
+	double GetVertexZ(int n) //получение координат вершины модели с заданным номером;
+	{
+		return this->Vertices.getCell(2, n)/this->Vertices.getCell(3,n);
+	}
+
 	void Apply(Matrix<>); // применение к модели аффинного преобразования, заданного своей матрицей;
 	void Apply(); // применение к модели накопленного афинного преобразования;
 	void Project(Matrix<>); // проецирование модели.
-private:
-	//???????Вопрос по формированию ребер из граней
-	void setEdges() {
-		int K = this->Faces.getRows() * 2;
-		int* edgeArray = new int[K * 2];
-		int k = 0;
-		for (int i = 0; i < this->Faces.getRows(); i++)
-		{
-			edgeArray[k] = this->Faces.getCell(i, 0);
-			k++;
-			edgeArray[k] = this->Faces.getCell(i, 1);
-			k++;
-
-			edgeArray[k] = this->Faces.getCell(i, 1);
-			k++;
-			edgeArray[k] = this->Faces.getCell(i, 2);
-			k++;
-
-		}
-		this->Edges = Matrix<int>(K, 2, edgeArray);
-		
-}
 
 };
 Model3D::Model3D()
@@ -64,29 +65,56 @@ Model3D::Model3D()
 {
 }
 Model3D::Model3D(const Matrix<int> faces, const Matrix<double> vertices)
-	:Vertices(vertices), InitialVertices(Matrix<double>()), ProjectedVertices(Matrix<double>()), Faces(faces), CumulativeAT(Identity3D())
+	:Vertices(vertices), InitialVertices(this->Vertices), ProjectedVertices(Matrix<double>(3,this->Vertices.getCols())), Faces(faces), CumulativeAT(Identity3D())
 {
 	SetEdges();
 }
 Model3D::Model3D(string facesFilePath , string verticesFilePath)
-	:Vertices(readVerticesFromFile(verticesFilePath)),Faces(readFacesFromFile(facesFilePath)), InitialVertices(Matrix<double>()), ProjectedVertices(Matrix<double>()), CumulativeAT(Identity3D())
+	:Vertices(readVerticesFromFile(verticesFilePath)),Faces(readFacesFromFile(facesFilePath)), InitialVertices(this->Vertices), ProjectedVertices(Matrix<double>(3,this->Vertices.getCols())), CumulativeAT(Identity3D())
 {
 	SetEdges();
 }
 Model3D::Model3D(int M, int L)
-	: Vertices(Matrix<double>(4,M)), InitialVertices(Matrix<double>(4,M)), ProjectedVertices(Matrix<double>(4,M)), Faces(Matrix<int>(L, 3)), CumulativeAT(Identity3D())
+	: Vertices(Matrix<double>(4,M)), InitialVertices(Matrix<double>(4,M)), ProjectedVertices(Matrix<double>(3,M)), Faces(Matrix<int>(L, 3)), CumulativeAT(Identity3D())
 {
 	SetEdges();
 }
 void Model3D:: Apply(Matrix<> AT) {
+	DebugMatrix(AT, "At:");
 	this->CumulativeAT = (AT * this->CumulativeAT);
+	DebugMatrix(this->CumulativeAT, "Cumulative:");
 }
 void Model3D::Apply() {
 	this->Vertices = this->CumulativeAT*this->InitialVertices;
+	DebugMatrix(this->Vertices, "Vertices:");
+
 }
 //??WhoKnows
 void Model3D::Project(Matrix<> P) {
-	this->Vertices = P*this->ProjectedVertices;
+	this->ProjectedVertices = P*this->Vertices;
 }
+void Model3D::SetEdges() {
+	int K = this->Faces.getRows() * 3;
+	int* edgeArray = new int[K * 3];
+	int k = 0;
+	for (int i = 0; i < this->Faces.getRows(); i++)
+	{
+		edgeArray[k] = this->Faces.getCell(i, 0);
+		k++;
+		edgeArray[k] = this->Faces.getCell(i, 1);
+		k++;
 
+		edgeArray[k] = this->Faces.getCell(i, 1);
+		k++;
+		edgeArray[k] = this->Faces.getCell(i, 2);
+		k++;
+
+		edgeArray[k] = this->Faces.getCell(i, 0);
+		k++;
+		edgeArray[k] = this->Faces.getCell(i, 2);
+		k++;
+
+	}
+	this->Edges = Matrix<int>(K, 2, edgeArray);
+}
 #endif MODEL3D_H

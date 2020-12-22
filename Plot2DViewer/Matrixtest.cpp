@@ -1,5 +1,6 @@
 /*
 #include "Model3D.h"
+#include "AffineTransfrom3D.h"
 using namespace std;
 
 void test1() {
@@ -71,11 +72,26 @@ system("pause");
 
 
 void test3d_1() {
-	Model3D model;
+	Model3D model("faces.txt", "vertices.txt");
+	cout << "Vertices:" << endl;
+	cout<<model.GetVertices();
+	cout << "Faces:" << endl;
+	cout << model.GetFaces();
+	model.Apply(Translation(1, 2, 3));
+	model.Apply(MappingXY());
+	model.Apply();
+	cout << "After translation and mapping"<<endl;
+	cout << model.GetVertices();
+	cout << "Edges:" << endl;
+	cout << model.GetEdges();
+
+
 }
 void main()
 {
 	
-	
+	test3d_1();
+	system("PAUSE");
 }
+
 */
